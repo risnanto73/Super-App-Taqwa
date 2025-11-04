@@ -1,42 +1,56 @@
-import 'dart:async';
-
-import 'package:carousel_slider/carousel_slider.dart';
+// -----------------------------------------------
+// IMPORT PACKAGE YANG DIGUNAKAN
+// -----------------------------------------------
+import 'dart:async'; // untuk Timer countdown
+import 'package:carousel_slider/carousel_slider.dart'; // slider banner
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:intl/intl.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:string_similarity/string_similarity.dart';
+import 'package:http/http.dart' as http; // untuk ambil data dari API GitHub
+import 'dart:convert'; // untuk decode JSON
+import 'package:geolocator/geolocator.dart'; // ambil posisi GPS
+import 'package:geocoding/geocoding.dart'; // konversi GPS ke nama kota
+import 'package:intl/intl.dart'; // format tanggal & waktu
+import 'package:permission_handler/permission_handler.dart'; // minta izin lokasi
+import 'package:shared_preferences/shared_preferences.dart'; // simpan cache lokal
+import 'package:string_similarity/string_similarity.dart'; // fuzzy match nama kota
 
+// -----------------------------------------------
+// DASHBOARD PAGE UTAMA
+// -----------------------------------------------
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
-
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  // controller untuk carousel banner
   final CarouselController _controller = CarouselController();
+
+  // index banner aktif
   int _currentIndex = 0;
+
+  // status loading
   bool _isLoading = true;
+
+  // countdown menuju waktu sholat berikutnya
   Duration? _timeRemaining;
   Timer? _countdownTimer;
 
+  // format durasi countdown jadi "x jam y menit lagi"
   String _formatDuration(Duration d) {
     final hours = d.inHours;
     final minutes = d.inMinutes.remainder(60);
     return "$hours jam $minutes menit lagi";
   }
 
+  // daftar poster carousel
   final List<String> posterList = const [
     'assets/images/ramadhan-kareem.png',
     'assets/images/idl-fitr.png',
     'assets/images/idl-adh.png',
   ];
 
+  // variabel state utama
   String _location = "Mengambil lokasi...";
   String _prayerName = "Loading...";
   String _prayerTime = "Loading...";
@@ -46,9 +60,12 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    _updatePrayerTimes();
+    _updatePrayerTimes(); // mulai proses ambil lokasi & jadwal
   }
 
+  // ---------------------------------------------------------
+  // AMBIL LOKASI, DETEKSI KOTA, DAN MUAT JADWAL SHOLAT
+  // ---------------------------------------------------------
   Future<void> _updatePrayerTimes() async {
     setState(() {
       _isLoading = true;
@@ -56,7 +73,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     if (await _requestLocationPermission()) {
       try {
-        // timeout GPS biar gak ngegantung
+        // ambil posisi GPS dengan batas waktu 10 detik
         Position position =
             await Geolocator.getCurrentPosition(
               desiredAccuracy: LocationAccuracy.high,
@@ -67,7 +84,7 @@ class _DashboardPageState extends State<DashboardPage> {
               },
             );
 
-        // Coba dapatkan nama kota terdekat
+        // cari kota terdekat berdasarkan koordinat GPS
         String city;
         try {
           city = await getClosestCity(position.latitude, position.longitude);
@@ -76,7 +93,7 @@ class _DashboardPageState extends State<DashboardPage> {
           city = "semarang"; // fallback default
         }
 
-        // Ambil lokasi deskriptif (jangan bikin crash kalau null)
+        // ambil nama lokasi secara deskriptif (misal: "Karanganyar, Jawa Tengah")
         List<Placemark> placemarks = await placemarkFromCoordinates(
           position.latitude,
           position.longitude,
@@ -85,12 +102,17 @@ class _DashboardPageState extends State<DashboardPage> {
             ? placemarks.first
             : Placemark();
 
+        // ambil bulan & tahun saat ini
         String month = DateFormat('MM').format(DateTime.now());
         String year = DateFormat('yyyy').format(DateTime.now());
 
+        // ambil jadwal sholat (pakai cache jika ada)
         _jadwalSholat = await fetchJadwalSholat(city, month, year);
+
+        // hitung waktu sholat berikutnya
         _calculateNextPrayer();
 
+        // update tampilan
         setState(() {
           _location =
               "${place.subAdministrativeArea ?? ''}, ${place.locality ?? ''}";
@@ -98,22 +120,23 @@ class _DashboardPageState extends State<DashboardPage> {
           _isLoading = false;
         });
       } catch (e) {
+        // tampilkan error dialog jika gagal
         print("ERROR di _updatePrayerTimes: $e");
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
         _showErrorDialog("Gagal mengambil data: ${e.toString()}");
       }
     } else {
-      setState(() {
-        _isLoading = false;
-      });
+      // jika izin lokasi ditolak
+      setState(() => _isLoading = false);
       _showErrorDialog(
         "Akses lokasi ditolak. Aktifkan izin lokasi untuk melanjutkan.",
       );
     }
   }
 
+  // ---------------------------------------------------------
+  // AMBIL JADWAL SHOLAT DARI API (DAN SIMPAN KE CACHE)
+  // ---------------------------------------------------------
   Future<List<dynamic>> fetchJadwalSholat(
     String city,
     String month,
@@ -123,22 +146,25 @@ class _DashboardPageState extends State<DashboardPage> {
     final cacheKey = "$city-$year-$month";
     final cachedData = prefs.getString(cacheKey);
 
+    // pakai data dari cache kalau sudah ada
     if (cachedData != null) {
       print("📦 Memuat jadwal dari cache: $cacheKey");
       return json.decode(cachedData) as List<dynamic>;
     }
 
+    // ambil data dari GitHub
     final url =
         'https://raw.githubusercontent.com/lakuapik/jadwalsholatorg/master/adzan/$city/$year/$month.json';
     print("🌐 Fetching jadwal dari: $url");
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
+      // simpan hasil ke cache
       await prefs.setString(cacheKey, response.body);
       print("✅ Jadwal disimpan ke cache: $cacheKey");
       return json.decode(response.body) as List<dynamic>;
     } else {
-      // fallback ke tahun 2019
+      // fallback ke data tahun 2019 jika tahun berjalan belum ada
       final fallbackUrl =
           'https://raw.githubusercontent.com/lakuapik/jadwalsholatorg/master/adzan/$city/2019/$month.json';
       final fallbackResponse = await http.get(Uri.parse(fallbackUrl));
@@ -155,8 +181,11 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  // ---------------------------------------------------------
+  // COBA CARI KOTA TERDEKAT BERDASARKAN NAMA (FUZZY MATCH)
+  // ---------------------------------------------------------
   Future<String> getClosestCity(double userLat, double userLon) async {
-    // Ambil daftar kota dari GitHub
+    // ambil daftar nama kota dari GitHub
     final url =
         'https://raw.githubusercontent.com/lakuapik/jadwalsholatorg/master/kota.json';
     final response = await http.get(Uri.parse(url));
@@ -167,7 +196,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     final List<dynamic> cityList = json.decode(response.body);
 
-    // Ambil nama kota dari geocoding (contoh: "Semarang", "Karanganyar")
+    // dapatkan nama kota dari koordinat
     List<Placemark> placemarks = await placemarkFromCoordinates(
       userLat,
       userLon,
@@ -183,10 +212,9 @@ class _DashboardPageState extends State<DashboardPage> {
 
     print("📍 Kota pengguna dari GPS: $userCity");
 
-    // Bandingkan kemiripan nama kota (fuzzy match)
+    // cari kecocokan nama kota (pakai library string_similarity)
     double bestScore = 0.0;
     String bestMatch = cityList.first;
-
     for (var city in cityList) {
       double score = city.toString().similarityTo(userCity ?? "");
       if (score > bestScore) {
@@ -201,6 +229,9 @@ class _DashboardPageState extends State<DashboardPage> {
     return bestMatch;
   }
 
+  // ---------------------------------------------------------
+  // HITUNG WAKTU SHOLAT BERIKUTNYA & MULAI COUNTDOWN
+  // ---------------------------------------------------------
   void _calculateNextPrayer() {
     if (_jadwalSholat == null || _jadwalSholat!.isEmpty) return;
 
@@ -208,19 +239,20 @@ class _DashboardPageState extends State<DashboardPage> {
     final format = DateFormat('HH:mm');
     final todayDate = DateFormat('yyyy-MM-dd').format(now);
 
-    // cari jadwal hari ini
+    // ambil jadwal untuk hari ini
     var todaySchedule = _jadwalSholat?.firstWhere(
       (element) => element['tanggal'] == todayDate,
       orElse: () => null,
     );
 
     if (todaySchedule != null) {
-      // gabungkan tanggal + jam untuk setiap waktu sholat
+      // ubah string jam jadi DateTime agar bisa dibanding
       DateTime parseTime(String hhmm) {
         final time = format.parse(hhmm);
         return DateTime(now.year, now.month, now.day, time.hour, time.minute);
       }
 
+      // buat map daftar waktu sholat hari ini
       final prayers = {
         "Shubuh": parseTime(todaySchedule['shubuh']),
         "Dzuhur": parseTime(todaySchedule['dzuhur']),
@@ -229,7 +261,7 @@ class _DashboardPageState extends State<DashboardPage> {
         "Isya": parseTime(todaySchedule['isya']),
       };
 
-      // cari waktu berikutnya
+      // cari waktu sholat berikutnya (yang paling dekat setelah waktu sekarang)
       String nextPrayer = "Shubuh";
       Duration? closestDuration;
 
@@ -242,7 +274,7 @@ class _DashboardPageState extends State<DashboardPage> {
         }
       });
 
-      // kalau semua waktu hari ini sudah lewat → ambil Shubuh besok
+      // jika semua waktu sudah lewat → ambil shubuh besok
       if (closestDuration == null) {
         nextPrayer = "Shubuh";
         final tomorrow = now.add(Duration(days: 1));
@@ -252,28 +284,27 @@ class _DashboardPageState extends State<DashboardPage> {
           orElse: () => null,
         );
 
-        if (tomorrowSchedule != null) {
-          _prayerTime = tomorrowSchedule['shubuh'];
-        } else {
-          _prayerTime = "N/A";
-        }
+        _prayerTime = tomorrowSchedule != null
+            ? tomorrowSchedule['shubuh']
+            : "N/A";
       } else {
         _prayerTime = DateFormat('HH:mm').format(prayers[nextPrayer]!);
       }
 
+      // simpan ke state dan mulai countdown
       setState(() {
         _prayerName = nextPrayer;
         _prayerTime = DateFormat('HH:mm').format(prayers[nextPrayer]!);
         _timeRemaining = prayers[nextPrayer]!.difference(now);
       });
 
-      // Jalankan countdown tiap detik
+      // timer hitung mundur setiap detik
       _countdownTimer?.cancel();
       _countdownTimer = Timer.periodic(Duration(seconds: 1), (timer) {
         final remaining = prayers[nextPrayer]!.difference(DateTime.now());
         if (remaining.isNegative) {
           timer.cancel();
-          _calculateNextPrayer(); // otomatis ganti ke sholat selanjutnya
+          _calculateNextPrayer(); // otomatis hitung ulang setelah masuk waktu baru
         } else {
           setState(() {
             _timeRemaining = remaining;
@@ -281,6 +312,7 @@ class _DashboardPageState extends State<DashboardPage> {
         }
       });
     } else {
+      // kalau tidak ada jadwal
       setState(() {
         _prayerName = "N/A";
         _prayerTime = "N/A";
@@ -288,12 +320,12 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  // ---------------------------------------------------------
+  // PERMINTAAN IZIN AKSES LOKASI
+  // ---------------------------------------------------------
   Future<bool> _requestLocationPermission() async {
     var status = await Permission.location.status;
-
-    if (status.isGranted) {
-      return true;
-    }
+    if (status.isGranted) return true;
 
     if (status.isDenied) {
       status = await Permission.location.request();
@@ -301,25 +333,26 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     if (status.isPermanentlyDenied) {
-      // Kalau user sudah tolak dan pilih "Don't ask again"
-      await openAppSettings(); // buka pengaturan aplikasi
+      await openAppSettings(); // arahkan user ke pengaturan app
       return false;
     }
 
     return false;
   }
 
+  // ---------------------------------------------------------
+  // PILIH BACKGROUND SESUAI JAM (pagi, siang, malam)
+  // ---------------------------------------------------------
   String _getBackgroundImage(DateTime now) {
     int hour = now.hour;
-    if (hour < 12) {
-      return 'assets/images/bg_morning.png';
-    } else if (hour < 18) {
-      return 'assets/images/bg_afternoon.png';
-    } else {
-      return 'assets/images/bg_night.png';
-    }
+    if (hour < 12) return 'assets/images/bg_morning.png';
+    if (hour < 18) return 'assets/images/bg_afternoon.png';
+    return 'assets/images/bg_night.png';
   }
 
+  // ---------------------------------------------------------
+  // DIALOG ERROR GENERIK
+  // ---------------------------------------------------------
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -335,9 +368,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text("OK"),
             ),
           ],
@@ -346,6 +377,9 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  // ---------------------------------------------------------
+  // BUILD UI DASHBOARD
+  // ---------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -356,21 +390,18 @@ class _DashboardPageState extends State<DashboardPage> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    // ------- HEADER MELENGKUNG -------
+                    // ===== HEADER DENGAN BACKGROUND LANGIT =====
                     Stack(
                       clipBehavior: Clip.none,
                       children: [
+                        // bagian background
                         Container(
                           width: double.infinity,
                           height: 260,
                           decoration: BoxDecoration(
-                            color: const Color(
-                              0xFFB3E5FC,
-                            ), // biru muda seperti langit
+                            color: const Color(0xFFB3E5FC),
                             image: const DecorationImage(
-                              image: AssetImage(
-                                'assets/images/bg_morning.png',
-                              ), // gambar latar belakang langit
+                              image: AssetImage('assets/images/bg_morning.png'),
                               fit: BoxFit.cover,
                             ),
                             borderRadius: const BorderRadius.only(
@@ -413,17 +444,15 @@ class _DashboardPageState extends State<DashboardPage> {
                                     height: 1.2,
                                   ),
                                 ),
-                                const SizedBox(
-                                  height: 25,
-                                ), // 🌟 jarak tambahan agar card tidak nempel
+                                const SizedBox(height: 25),
                               ],
                             ),
                           ),
                         ),
 
-                        // CARD WAKTU SHOLAT BERIKUTNYA
+                        // CARD INFO WAKTU SHOLAT BERIKUTNYA
                         Positioned(
-                          bottom: -65, // posisi card
+                          bottom: -65,
                           left: 20,
                           right: 20,
                           child: Container(
@@ -484,9 +513,10 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                       ],
                     ),
+
                     const SizedBox(height: 80),
 
-                    // ------- MENU UTAMA -------
+                    // ===== MENU GRID (Doa, Zakat, Sholat, Kajian) =====
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20.0),
                       child: GridView.count(
@@ -519,9 +549,10 @@ class _DashboardPageState extends State<DashboardPage> {
                         ],
                       ),
                     ),
+
                     const SizedBox(height: 20),
 
-                    // ------- CARD JADWAL SHOLAT -------
+                    // ===== EXPANSION TILE JADWAL SHOLAT =====
                     if (_jadwalSholat != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -557,9 +588,10 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                         ),
                       ),
+
                     const SizedBox(height: 20),
 
-                    // ------- CAROUSEL SLIDER -------
+                    // ===== CAROUSEL SLIDER =====
                     CarouselSlider.builder(
                       itemCount: posterList.length,
                       itemBuilder: (context, index, realIndex) {
@@ -598,9 +630,8 @@ class _DashboardPageState extends State<DashboardPage> {
                         },
                       ),
                     ),
-                    const SizedBox(height: 10),
 
-                    // ------- INDICATOR -------
+                    // indikator carousel
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: posterList.asMap().entries.map((entry) {
@@ -623,7 +654,6 @@ class _DashboardPageState extends State<DashboardPage> {
                         );
                       }).toList(),
                     ),
-                    const SizedBox(height: 30),
                   ],
                 ),
               ),
@@ -631,7 +661,9 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // Widget Menu Item Grid
+  // ---------------------------------------------------------
+  // WIDGET BUILDER MENU GRID
+  // ---------------------------------------------------------
   Widget _buildMenuItem(String iconPath, String title, String routeName) {
     return Material(
       color: Colors.transparent,
@@ -672,6 +704,9 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  // ---------------------------------------------------------
+  // TAMPILKAN LIST JADWAL SHOLAT HARI INI (DALAM CARD)
+  // ---------------------------------------------------------
   Widget _buildTodayPrayerListCard() {
     final todayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
     var todaySchedule = _jadwalSholat?.firstWhere(
@@ -683,6 +718,7 @@ class _DashboardPageState extends State<DashboardPage> {
       return const Text("Tidak ada jadwal untuk hari ini");
     }
 
+    // data waktu sholat
     final items = {
       "Imsyak": todaySchedule['imsyak'],
       "Shubuh": todaySchedule['shubuh'],
@@ -696,7 +732,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Column(
       children: items.entries.map((entry) {
-        final isNext = entry.key == _prayerName;
+        final isNext =
+            entry.key == _prayerName; // tandai waktu sholat berikutnya
 
         return Container(
           margin: const EdgeInsets.symmetric(vertical: 4),
