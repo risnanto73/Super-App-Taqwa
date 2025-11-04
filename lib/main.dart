@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
       routes: {
         // '/' nama route dari halaman HomePage(),
         // '/zakat' nama route dari halaman ZakatPage(),
-        '/': (context) => HomePage(),
+        '/': (context) => DashboardPage(),
         '/video-kajian': (context) => VideoPage(),
         '/zakat-page': (context) => ZakatPage(),
       },
