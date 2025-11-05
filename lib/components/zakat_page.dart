@@ -1,3 +1,9 @@
+// ================================================================
+// 🕌 ZAKAT PAGE — versi teaching-friendly
+// Dibuat untuk menampilkan perhitungan zakat penghasilan
+// berdasarkan harga emas dunia (GoldAPI) & kurs USD/IDR (OpenERAPI)
+// ================================================================
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -6,6 +12,8 @@ import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// 🔷 Kelas utama halaman zakat
+/// Mewarisi `StatefulWidget` agar bisa memperbarui UI secara dinamis
 class ZakatPage extends StatefulWidget {
   const ZakatPage({Key? key}) : super(key: key);
 
@@ -13,45 +21,62 @@ class ZakatPage extends StatefulWidget {
   State<ZakatPage> createState() => _ZakatPageState();
 }
 
+/// 🔷 State untuk menyimpan data dan logika utama
 class _ZakatPageState extends State<ZakatPage> {
+  // ---------------------------------------------------------------
+  // 🔷 Controller untuk input user
+  // ---------------------------------------------------------------
   final TextEditingController _incomeController = TextEditingController();
   final TextEditingController _expenseController = TextEditingController();
 
+  // ---------------------------------------------------------------
+  // 🔷 Variabel utama logika zakat
+  // ---------------------------------------------------------------
   double? _zakatAmount;
   double? _nisabValue;
   bool _isAboveNisab = false;
   bool _isLoading = false;
   List<double> _zakatHistory = [];
 
-  String? _lastUpdate; // simpan waktu update terakhir
-  bool _isOffline = false; // indikator mode offline
+  // ---------------------------------------------------------------
+  // 🔷 Variabel untuk status dan cache
+  // ---------------------------------------------------------------
+  String? _lastUpdate; // waktu update terakhir dari API
+  bool _isOffline = false; // apakah sedang pakai cache
 
+  // 🔷 Formatter untuk mata uang Rupiah (tanpa desimal)
   final NumberFormat _currencyFormat = NumberFormat.currency(
     locale: 'id_ID',
     symbol: 'Rp ',
     decimalDigits: 0,
   );
 
+  // ---------------------------------------------------------------
+  // 🔷 Lifecycle method: dijalankan sekali saat halaman dimuat
+  // ---------------------------------------------------------------
   @override
   void initState() {
     super.initState();
-    _fetchGoldPrice();
+    _fetchGoldPrice(); // ambil data harga emas dan kurs
   }
 
+  // ================================================================
+  // [1] 🔷 Ambil data harga emas dari GoldAPI + kurs USD/IDR
+  // ================================================================
   Future<void> _fetchGoldPrice() async {
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     final prefs = await SharedPreferences.getInstance();
-    const fallbackPricePerGram = 2000000.0; // fallback lebih realistis sekarang
+    const fallbackPricePerGram = 2000000.0; // fallback realistis (Rp 2 jt/gram)
     double? pricePerGram;
     double? usdToIdr;
 
     try {
       print("🌐 [LOG] Mengambil harga emas & kurs USD→IDR...");
 
-      // 1️⃣ Ambil kurs USD → IDR
+      // -------------------------------------------------------------
+      // [1.1] Ambil kurs USD → IDR dari open.er-api.com
+      // -------------------------------------------------------------
       final exchangeRes = await http.get(
         Uri.parse('https://open.er-api.com/v6/latest/USD'),
       );
@@ -65,7 +90,9 @@ class _ZakatPageState extends State<ZakatPage> {
         print("⚠️ Gagal ambil kurs, fallback Rp $usdToIdr");
       }
 
-      // 2️⃣ Ambil harga emas per gram dari GoldAPI.io
+      // -------------------------------------------------------------
+      // [1.2] Ambil harga emas per gram 24K dari GoldAPI.io
+      // -------------------------------------------------------------
       final goldRes = await http.get(
         Uri.parse('https://www.goldapi.io/api/XAU/USD'),
         headers: {
@@ -76,50 +103,38 @@ class _ZakatPageState extends State<ZakatPage> {
 
       if (goldRes.statusCode == 200) {
         final goldData = json.decode(goldRes.body);
-
-        // Ambil langsung field harga per gram 24K (USD)
         final double usdPerGram = (goldData['price_gram_24k'] ?? 0).toDouble();
         print("🪙 Harga emas (USD/gram 24K): $usdPerGram");
 
-        // Konversi ke Rupiah
+        // 🔹 Konversi ke Rupiah
         pricePerGram = usdPerGram * (usdToIdr ?? 15000);
-        print(
-          "💰 Harga emas (IDR/gram): Rp ${pricePerGram?.toStringAsFixed(0)}",
-        );
+        print("💰 Harga emas (IDR/gram): Rp ${pricePerGram?.toStringAsFixed(0)}");
 
-        // 3️⃣ Validasi kisaran harga (pasar 2025: 1.8–2.6 jt)
+        // 🔹 Validasi harga agar realistis
         if (pricePerGram! < 1800000 || pricePerGram > 2600000) {
-          print(
-            "⚠️ Harga emas tidak realistis ($pricePerGram). Pakai fallback Rp $fallbackPricePerGram",
-          );
+          print("⚠️ Harga emas tidak realistis ($pricePerGram). Gunakan fallback.");
           pricePerGram = fallbackPricePerGram;
         }
 
-        // 4️⃣ Simpan ke cache
+        // 🔹 Simpan hasil ke cache
         await prefs.setDouble('last_gold_price', pricePerGram);
         await prefs.setString('last_update', DateTime.now().toIso8601String());
         _isOffline = false;
-        print("💾 Harga emas tersimpan ke cache: Rp $pricePerGram");
       } else {
-        // Fallback ke cache
-        print("⚠️ Gagal ambil API GoldAPI (${goldRes.statusCode})");
-        pricePerGram = prefs.getDouble('last_gold_price');
-        if (pricePerGram != null) {
-          print("📦 Gunakan harga dari cache: Rp $pricePerGram");
-          _isOffline = true;
-        } else {
-          print("⚠️ Cache kosong, fallback Rp $fallbackPricePerGram");
-          pricePerGram = fallbackPricePerGram;
-          _isOffline = true;
-        }
+        // 🔹 Fallback ke cache
+        pricePerGram = prefs.getDouble('last_gold_price') ?? fallbackPricePerGram;
+        _isOffline = true;
       }
     } catch (e) {
+      // 🔹 Jika tidak konek API
       print("📴 Tidak bisa konek API: $e");
       pricePerGram = prefs.getDouble('last_gold_price') ?? fallbackPricePerGram;
       _isOffline = true;
     }
 
-    // 5️⃣ Hitung nisab (85 gram)
+    // -------------------------------------------------------------
+    // [1.3] Hitung nilai nisab (85 gram emas)
+    // -------------------------------------------------------------
     setState(() {
       _nisabValue = 85 * (pricePerGram ?? fallbackPricePerGram);
       _lastUpdate = prefs.getString('last_update');
@@ -129,20 +144,26 @@ class _ZakatPageState extends State<ZakatPage> {
     print("✅ Nisab final (85 gram): Rp ${_nisabValue?.toStringAsFixed(0)}");
   }
 
+  // ================================================================
+  // [2] 🔷 Logika perhitungan zakat penghasilan
+  // ================================================================
   void _calculateZakat() {
-    // --- Ambil teks input ---
+    /// Langkah-langkah logika:
+    /// 1️⃣ Ambil input gaji & pengeluaran
+    /// 2️⃣ Bersihkan format (hilangkan titik, koma, .00)
+    /// 3️⃣ Validasi input
+    /// 4️⃣ Hitung zakat (2.5% dari penghasilan bersih)
+    /// 5️⃣ Bandingkan dengan nisab untuk menentukan wajib/tidak
+
     String incomeText = _incomeController.text.trim();
     String expenseText = _expenseController.text.trim();
 
-    // --- Bersihkan input ke format numerik ---
     String cleanIncome = toNumericString(incomeText, allowPeriod: false);
     String cleanExpense = toNumericString(expenseText, allowPeriod: false);
 
-    // --- Hapus ".00" sisa format ---
     cleanIncome = cleanIncome.replaceAll(RegExp(r'\.00$'), '');
     cleanExpense = cleanExpense.replaceAll(RegExp(r'\.00$'), '');
 
-    // --- Cek validitas input ---
     if (cleanIncome.isEmpty || cleanExpense.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -166,7 +187,6 @@ class _ZakatPageState extends State<ZakatPage> {
       return;
     }
 
-    // --- Hitung zakat ---
     final double netIncome = (income - expenses).clamp(0, double.infinity);
     final double annualIncome = income * 12;
     final double zakat = netIncome * 0.025;
@@ -181,6 +201,9 @@ class _ZakatPageState extends State<ZakatPage> {
     print("📊 Net Income: $netIncome | Annual: $annualIncome | Zakat: $zakat");
   }
 
+  // ================================================================
+  // [3] 🔷 UI utama halaman zakat
+  // ================================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -193,6 +216,8 @@ class _ZakatPageState extends State<ZakatPage> {
           style: TextStyle(fontFamily: 'PoppinsSemiBold', color: Colors.white),
         ),
       ),
+
+      /// 🔷 BODY — berisi seluruh konten zakat
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.amber))
           : SingleChildScrollView(
@@ -201,7 +226,7 @@ class _ZakatPageState extends State<ZakatPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ======================================================
-                  // 📈 INFORMASI HARGA EMAS DUNIA + STATUS KONEKSI API
+                  // [3.1] 📈 INFORMASI HARGA EMAS DUNIA + STATUS KONEKSI
                   // ======================================================
                   if (!_isLoading && _nisabValue != null)
                     Container(
@@ -219,18 +244,17 @@ class _ZakatPageState extends State<ZakatPage> {
                           ),
                         ],
                       ),
+
+                      /// Layout:
+                      /// [📈 Icon] [Info Emas + Update] [🟢 Online / 🔴 Offline]
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // ICON TRENDING (KIRI)
-                          const Icon(
-                            Icons.trending_up,
-                            color: Colors.amber,
-                            size: 28,
-                          ),
+                          const Icon(Icons.trending_up,
+                              color: Colors.amber, size: 28),
                           const SizedBox(width: 10),
 
-                          // KONTEN TENGAH
+                          // 🔹 Info harga & waktu update
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,8 +268,6 @@ class _ZakatPageState extends State<ZakatPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-
-                                // HARGA PER GRAM
                                 Text(
                                   "${_currencyFormat.format(_nisabValue! / 85)} / gram",
                                   style: const TextStyle(
@@ -254,56 +276,38 @@ class _ZakatPageState extends State<ZakatPage> {
                                     color: Colors.green,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-
-                                // TANGGAL UPDATE
                                 if (_lastUpdate != null)
                                   Text(
                                     "Update: ${DateFormat('dd MMM yyyy, HH:mm').format(DateTime.parse(_lastUpdate!))}",
                                     style: const TextStyle(
-                                      fontFamily: 'PoppinsRegular',
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
+                                        fontSize: 12, color: Colors.grey),
                                   ),
-
-                                // SUMBER API
                                 const Text(
                                   "Sumber: GoldAPI.io + open.er-api.com",
                                   style: TextStyle(
-                                    fontFamily: 'PoppinsRegular',
-                                    fontSize: 11,
-                                    color: Colors.grey,
-                                  ),
+                                      fontSize: 11, color: Colors.grey),
                                 ),
                               ],
                             ),
                           ),
 
-                          // STATUS ONLINE / OFFLINE (KANAN ATAS)
-                          Column(
+                          // 🔹 Status koneksi API (Online / Offline)
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    _isOffline ? Icons.circle : Icons.circle,
-                                    color: _isOffline
-                                        ? Colors.redAccent
-                                        : Colors.green,
-                                    size: 10,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    _isOffline ? "Offline (Cache)" : "Online",
-                                    style: TextStyle(
-                                      fontFamily: 'PoppinsRegular',
-                                      fontSize: 11,
-                                      color: _isOffline
-                                          ? Colors.redAccent
-                                          : Colors.green,
-                                    ),
-                                  ),
-                                ],
+                              Icon(Icons.circle,
+                                  color: _isOffline
+                                      ? Colors.redAccent
+                                      : Colors.green,
+                                  size: 10),
+                              const SizedBox(width: 4),
+                              Text(
+                                _isOffline ? "Offline (Cache)" : "Online",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: _isOffline
+                                      ? Colors.redAccent
+                                      : Colors.green,
+                                ),
                               ),
                             ],
                           ),
@@ -311,7 +315,9 @@ class _ZakatPageState extends State<ZakatPage> {
                       ),
                     ),
 
-                  // HEADER INFO NISAB
+                  // ======================================================
+                  // [3.2] 💰 INFORMASI NISAB SAAT INI
+                  // ======================================================
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
@@ -326,70 +332,47 @@ class _ZakatPageState extends State<ZakatPage> {
                           _nisabValue != null
                               ? "💰 Nisab saat ini (85 gram emas): ${_currencyFormat.format(_nisabValue)} per tahun."
                               : "Mengambil data harga emas...",
-                          style: const TextStyle(
-                            fontFamily: 'PoppinsRegular',
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
+                          style: const TextStyle(fontSize: 14),
                         ),
                         if (_lastUpdate != null)
                           Text(
                             "🕓 Terakhir diperbarui: ${DateFormat('dd MMM yyyy, HH:mm').format(DateTime.parse(_lastUpdate!))}",
                             style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
+                                fontSize: 12, color: Colors.grey),
                           ),
                         if (_isOffline)
                           const Text(
                             "⚠️ Mode offline: data diambil dari cache lokal",
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.redAccent,
-                            ),
+                                fontSize: 12, color: Colors.redAccent),
                           ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
 
-                  if (_nisabValue != null)
-                    Text(
-                      "Harga emas per gram: ${_currencyFormat.format(_nisabValue! / 85)}",
-                      style: const TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-
-                  const SizedBox(height: 20),
-
-                  // INPUT GAJI
-                  const Text(
-                    "Gaji Per Bulan",
-                    style: TextStyle(
-                      fontFamily: 'PoppinsSemiBold',
-                      fontSize: 16,
-                    ),
-                  ),
+                  // ======================================================
+                  // [3.3] 💼 INPUT: GAJI & PENGELUARAN
+                  // ======================================================
+                  const Text("Gaji Per Bulan",
+                      style: TextStyle(fontFamily: 'PoppinsSemiBold')),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _incomeController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       CurrencyInputFormatter(
-                        leadingSymbol: '', // biar gak dobel Rp
+                        leadingSymbol: '',
                         useSymbolPadding: false,
-                        mantissaLength: 0, // tanpa desimal
+                        mantissaLength: 0,
                         thousandSeparator: ThousandSeparator.Period,
                       ),
                     ],
                     decoration: InputDecoration(
                       hintText: "Masukkan gaji per bulan",
-                      prefixIcon: const Icon(Icons.monetization_on_outlined),
+                      prefixIcon:
+                          const Icon(Icons.monetization_on_outlined),
                       prefixText: 'Rp ',
-                      prefixStyle: const TextStyle(
-                        fontFamily: 'PoppinsSemiBold',
-                        color: Colors.black87,
-                        fontSize: 15,
-                      ),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
@@ -400,14 +383,8 @@ class _ZakatPageState extends State<ZakatPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // INPUT PENGELUARAN
-                  const Text(
-                    "Pengeluaran Pokok Per Bulan",
-                    style: TextStyle(
-                      fontFamily: 'PoppinsSemiBold',
-                      fontSize: 16,
-                    ),
-                  ),
+                  const Text("Pengeluaran Pokok Per Bulan",
+                      style: TextStyle(fontFamily: 'PoppinsSemiBold')),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _expenseController,
@@ -416,19 +393,15 @@ class _ZakatPageState extends State<ZakatPage> {
                       CurrencyInputFormatter(
                         leadingSymbol: '',
                         useSymbolPadding: false,
-                        mantissaLength: 0, // 🔥 hilangkan .00
+                        mantissaLength: 0,
                         thousandSeparator: ThousandSeparator.Period,
                       ),
                     ],
                     decoration: InputDecoration(
                       hintText: "Masukkan pengeluaran pokok",
-                      prefixIcon: const Icon(Icons.shopping_cart_outlined),
+                      prefixIcon:
+                          const Icon(Icons.shopping_cart_outlined),
                       prefixText: 'Rp ',
-                      prefixStyle: const TextStyle(
-                        fontFamily: 'PoppinsSemiBold',
-                        color: Colors.black87,
-                        fontSize: 15,
-                      ),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
@@ -437,8 +410,11 @@ class _ZakatPageState extends State<ZakatPage> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 20),
 
-                  // TOMBOL HITUNG
+                  // ======================================================
+                  // [3.4] 🧮 TOMBOL HITUNG ZAKAT
+                  // ======================================================
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -451,60 +427,53 @@ class _ZakatPageState extends State<ZakatPage> {
                       ),
                       onPressed: _calculateZakat,
                       icon: const Icon(Icons.calculate, color: Colors.white),
-                      label: const Text(
-                        "Hitung Zakat",
-                        style: TextStyle(
-                          fontFamily: 'PoppinsBold',
-                          color: Colors.white,
-                          fontSize: 16,
-                        ),
-                      ),
+                      label: const Text("Hitung Zakat",
+                          style: TextStyle(
+                              fontFamily: 'PoppinsBold', fontSize: 16)),
                     ),
                   ),
                   const SizedBox(height: 30),
 
-                  // HASIL
+                  // ======================================================
+                  // [3.5] 📊 HASIL PERHITUNGAN ZAKAT
+                  // ======================================================
                   if (_zakatAmount != null)
-                    Center(
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 6,
-                              offset: const Offset(0, 3),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            _isAboveNisab
+                                ? "✅ Anda WAJIB membayar zakat penghasilan."
+                                : "ℹ️ Anda BELUM mencapai nisab zakat.",
+                            style: TextStyle(
+                              fontFamily: 'PoppinsSemiBold',
+                              color: _isAboveNisab
+                                  ? Colors.green
+                                  : Colors.redAccent,
                             ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              _isAboveNisab
-                                  ? "✅ Anda WAJIB membayar zakat penghasilan."
-                                  : "ℹ️ Anda BELUM mencapai nisab zakat.",
-                              style: TextStyle(
-                                fontFamily: 'PoppinsSemiBold',
-                                color: _isAboveNisab
-                                    ? Colors.green
-                                    : Colors.redAccent,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _currencyFormat.format(_zakatAmount),
-                              style: const TextStyle(
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _currencyFormat.format(_zakatAmount),
+                            style: const TextStyle(
                                 fontFamily: 'PoppinsBold',
                                 fontSize: 28,
-                                color: Colors.green,
-                              ),
-                            ),
-                          ],
-                        ),
+                                color: Colors.green),
+                          ),
+                        ],
                       ),
                     ),
                 ],
