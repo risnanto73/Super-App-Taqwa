@@ -50,16 +50,33 @@ class _HomePageState extends State<HomePage> {
   // =============================
   // [MENU ITEM WIDGET]
   // =============================
-  Widget _buildMenuItem(
-    String iconPath, 
-    String title, 
-    String routeName
-  ) {
-    return Column(
-      children: [
-        Image.asset(iconPath, width: 35,),
-        Text(title)
-      ],
+  Widget _buildMenuItem(String iconPath, String title, String routeName) {
+    return InkWell(
+      onTap: () {},
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(iconPath, width: 35),
+            const SizedBox(height: 6),
+            Text(
+              title,
+              style: TextStyle(fontFamily: 'PoppinsRegular', fontSize: 13),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -75,20 +92,21 @@ class _HomePageState extends State<HomePage> {
         physics: const NeverScrollableScrollPhysics(),
         children: [
           _buildMenuItem(
-            'assets/images/ic_menu_doa.png', // iconPath 
+            'assets/images/ic_menu_doa.png', // iconPath
             'Doa Harian', // title
-            '/doa'), //routeName
+            '/doa',
+          ), //routeName
           _buildMenuItem(
-            'assets/images/ic_menu_doa.png',
+            'assets/images/ic_menu_jadwal_sholat.png',
             'Jadwal Sholat',
             '/doa',
           ),
           _buildMenuItem(
-            'assets/images/ic_menu_doa.png',
+            'assets/images/ic_menu_video_kajian.png',
             'Video Kajian',
             '/doa',
           ),
-          _buildMenuItem('assets/images/ic_menu_doa.png', 'Zakat', '/doa'),
+          _buildMenuItem('assets/images/ic_menu_zakat.png', 'Zakat', '/doa'),
         ],
       ),
     );

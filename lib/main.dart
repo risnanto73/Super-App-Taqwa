@@ -80,7 +80,7 @@ class MyApp extends StatelessWidget {
       /// 🗺️ Routing antar halaman (named routes)
       routes: {
         // '/' → halaman awal (dashboard utama)
-        '/': (context) => DashboardPage(),
+        '/': (context) => HomePage(),
 
         // '/video-kajian' → halaman daftar video kajian
         '/video-kajian': (context) => VideoPage(),

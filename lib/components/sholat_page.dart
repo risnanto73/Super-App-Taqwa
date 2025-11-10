@@ -1,7 +1,11 @@
 // ================================================================
 // 🕌 SHOLAT PAGE — Jadwal Sholat Indonesia
-// Menggunakan API dari Lakuapik (GitHub)
-// Fitur: Search Kota + Jadwal Harian Sebulan + Warna & Ikon Tiap Salat
+// ================================================================
+// Fitur:
+// ✅ Ambil daftar kota dari API Lakuapik (GitHub)
+// ✅ Pencarian kota (search filter)
+// ✅ Tampilkan jadwal sholat sebulan penuh per kota
+// ✅ Warna & ikon khusus untuk tiap waktu salat
 // ================================================================
 
 import 'package:flutter/material.dart';
@@ -9,6 +13,29 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 
+// ================================================================
+// 🔷 Struktur Umum Widget
+// ================================================================
+// ┌────────────────────────────┐
+// │ SholatPage (StatefulWidget)│
+// ├────────────────────────────┤
+// │  state variables           │
+// │  ├ city list (API kota)    │
+// │  ├ selected city           │
+// │  ├ prayerTimes (jadwal)    │
+// │  └ loading + controller    │
+// ├────────────────────────────┤
+// │  methods:                  │
+// │  1️⃣ _fetchCityList()       │
+// │  2️⃣ _fetchPrayerSchedule() │
+// │  3️⃣ _filterCities()        │
+// │  4️⃣ _buildUI()             │
+// │  5️⃣ _buildCityList()       │
+// │  6️⃣ _buildPrayerSchedule() │
+// │  7️⃣ _buildPrayerCard()     │
+// │  8️⃣ _buildPrayerRow()      │
+// └────────────────────────────┘
+// ================================================================
 
 class SholatPage extends StatefulWidget {
   const SholatPage({super.key});
@@ -19,23 +46,23 @@ class SholatPage extends StatefulWidget {
 
 class _SholatPageState extends State<SholatPage> {
   // ================================================================
-  // [🔹] STATE VARIABLE
+  // [🔹] STATE VARIABLE — Menyimpan data penting aplikasi
   // ================================================================
   List<Map<String, String>> _cityList = []; // daftar {kode, nama}
-  String? _selectedCityCode;
-  String? _selectedCityName;
-  List<dynamic> _prayerTimes = [];
-  bool _isLoading = false;
+  String? _selectedCityCode; // kode kota (misal: semarang)
+  String? _selectedCityName; // nama kota (misal: Semarang)
+  List<dynamic> _prayerTimes = []; // hasil jadwal dari API
+  bool _isLoading = false; // indikator loading
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _fetchCityList();
+    _fetchCityList(); // panggil fungsi ambil daftar kota saat pertama kali
   }
 
   // ================================================================
-  // [1] 🔷 Fungsi untuk mengambil daftar kota dari GitHub
+  // [1] 🔷 Fungsi mengambil daftar kota dari API GitHub Lakuapik
   // ================================================================
   Future<void> _fetchCityList() async {
     try {
@@ -50,7 +77,7 @@ class _SholatPageState extends State<SholatPage> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 
-        // ✅ karena data berupa List, bukan Map
+        // ✅ API mengembalikan List, bukan Map
         if (data is List) {
           setState(() {
             _cityList = data
@@ -58,7 +85,7 @@ class _SholatPageState extends State<SholatPage> {
                 .toList();
           });
         } else {
-          print("⚠️ Struktur data tidak terduga: ${data.runtimeType}");
+          print("⚠️ Struktur data tidak sesuai: ${data.runtimeType}");
         }
       } else {
         throw Exception('Gagal memuat daftar kota');
@@ -71,7 +98,7 @@ class _SholatPageState extends State<SholatPage> {
   }
 
   // ================================================================
-  // [2] 🔷 Ambil jadwal sholat per kota dari API Lakuapik
+  // [2] 🔷 Fungsi mengambil jadwal sholat per kota
   // ================================================================
   Future<void> _fetchPrayerSchedule(String cityCode, String cityName) async {
     try {
@@ -102,11 +129,13 @@ class _SholatPageState extends State<SholatPage> {
   }
 
   // ================================================================
-  // [3] 🔷 Filter kota berdasarkan pencarian user
+  // [3] 🔷 Filter daftar kota berdasarkan teks pencarian
   // ================================================================
   List<Map<String, String>> _filterCities() {
     final query = _searchController.text.toLowerCase();
     if (query.isEmpty) return _cityList;
+
+    // 🔍 Cari kecocokan di nama atau kode kota
     return _cityList
         .where(
           (city) =>
@@ -117,12 +146,13 @@ class _SholatPageState extends State<SholatPage> {
   }
 
   // ================================================================
-  // [4] 🔷 Build UI utama (switch antara daftar kota / jadwal)
+  // [4] 🔷 Build UI utama (tampilan dinamis)
   // ================================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
+
       appBar: AppBar(
         title: Text(
           _selectedCityName == null
@@ -132,6 +162,8 @@ class _SholatPageState extends State<SholatPage> {
         ),
         backgroundColor: Colors.amber,
       ),
+
+      // 🔄 Jika sedang loading, tampilkan spinner
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.amber))
           : Padding(
@@ -177,6 +209,7 @@ class _SholatPageState extends State<SholatPage> {
   // ================================================================
   Widget _buildCityList() {
     final filteredCities = _filterCities();
+
     if (filteredCities.isEmpty) {
       return const Center(child: Text("Kota tidak ditemukan."));
     }
@@ -191,10 +224,7 @@ class _SholatPageState extends State<SholatPage> {
           ),
           margin: const EdgeInsets.symmetric(vertical: 6),
           child: ListTile(
-            leading: const Icon(
-              Icons.location_on_outlined,
-              color: Colors.amber,
-            ),
+            leading: const Icon(Icons.location_on_outlined, color: Colors.amber),
             title: Text(
               city["name"]!,
               style: const TextStyle(fontFamily: 'PoppinsMedium'),
@@ -213,12 +243,13 @@ class _SholatPageState extends State<SholatPage> {
   Widget _buildPrayerScheduleView() {
     return Column(
       children: [
+        // 🔸 Header dengan tombol "Ganti Kota"
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
+            const Text(
               "📅 Jadwal Bulan Ini",
-              style: const TextStyle(fontFamily: 'PoppinsSemiBold'),
+              style: TextStyle(fontFamily: 'PoppinsSemiBold'),
             ),
             TextButton.icon(
               icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 14),
@@ -234,6 +265,7 @@ class _SholatPageState extends State<SholatPage> {
         ),
         const SizedBox(height: 10),
 
+        // 🔸 ListView jadwal sholat harian
         Expanded(
           child: _prayerTimes.isEmpty
               ? const Center(child: Text("Memuat jadwal..."))
@@ -250,7 +282,7 @@ class _SholatPageState extends State<SholatPage> {
   }
 
   // ================================================================
-  // [7] 🔷 Card untuk setiap tanggal
+  // [7] 🔷 Card jadwal harian (per tanggal)
   // ================================================================
   Widget _buildPrayerCard(Map<String, dynamic> item) {
     final date = DateTime.parse(item['tanggal']);
@@ -290,9 +322,10 @@ class _SholatPageState extends State<SholatPage> {
   }
 
   // ================================================================
-  // [8] 🔷 Helper: baris tiap waktu sholat dengan ikon & warna
+  // [8] 🔷 Helper: Baris waktu salat (dengan ikon & warna)
   // ================================================================
   Widget _buildPrayerRow(String name, String time) {
+    // 🎨 Warna & ikon untuk tiap waktu salat
     final iconData = {
       "Shubuh": Icons.bedtime_rounded,
       "Dzuhur": Icons.wb_sunny_rounded,
@@ -300,6 +333,7 @@ class _SholatPageState extends State<SholatPage> {
       "Maghrib": Icons.night_shelter_rounded,
       "Isya": Icons.nightlight_round,
     }[name]!;
+
     final color = {
       "Shubuh": Colors.indigo.shade200,
       "Dzuhur": Colors.orange.shade300,
