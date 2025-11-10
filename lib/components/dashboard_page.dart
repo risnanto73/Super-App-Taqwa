@@ -78,7 +78,7 @@ class _DashboardPageState extends State<DashboardPage> {
   String _location = "Mengambil lokasi...";
   String _prayerName = "Loading...";
   String _prayerTime = "Loading...";
-  String _backgroundImage = 'assets/images/slider-3.png';
+  String _backgroundImage = 'assets/images/bg_morning.png';
   List<dynamic>? _jadwalSholat;
 
   @override
@@ -415,7 +415,7 @@ class _DashboardPageState extends State<DashboardPage> {
         // [12.1] 🌅 Background Langit
         Container(
           width: double.infinity,
-          height: 260,
+          height: 290,
           decoration: BoxDecoration(
             color: const Color(0xFFB3E5FC),
             image: DecorationImage(
@@ -449,12 +449,11 @@ class _DashboardPageState extends State<DashboardPage> {
                     fontSize: 22,
                   ),
                 ),
-                const SizedBox(height: 10),
                 Text(
                   DateFormat('HH:mm').format(DateTime.now()),
                   style: const TextStyle(
                     fontFamily: 'PoppinsBold',
-                    fontSize: 52,
+                    fontSize: 50,
                     color: Colors.white,
                     height: 1.2,
                   ),
@@ -645,7 +644,7 @@ class _DashboardPageState extends State<DashboardPage> {
           options: CarouselOptions(
             height: 180,
             autoPlay: true,
-            viewportFraction: 0.85,
+            viewportFraction: 0.7,
             enlargeCenterPage: true,
             onPageChanged: (index, reason) {
               setState(() => _currentIndex = index);
