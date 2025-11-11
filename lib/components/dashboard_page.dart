@@ -543,7 +543,7 @@ class _DashboardPageState extends State<DashboardPage> {
         mainAxisSpacing: 16,
         crossAxisSpacing: 16,
         children: [
-          _buildMenuItem('assets/images/ic_menu_doa.png', 'Doa', '/doa'),
+          _buildMenuItem('assets/images/ic_menu_doa.png', 'Doa', '/doa-harian'),
           _buildMenuItem(
             'assets/images/ic_menu_zakat.png',
             'Zakat',
@@ -557,6 +557,22 @@ class _DashboardPageState extends State<DashboardPage> {
           _buildMenuItem(
             'assets/images/ic_menu_video_kajian.png',
             'Kajian',
+            '/video-kajian',
+          ),
+          _buildMenuItem('assets/images/ic_menu_quran.png', 'Quran', '/quran'),
+          _buildMenuItem(
+            'assets/images/ic_menu_khutbah.png',
+            'Khutbah',
+            '/video-kajian',
+          ),
+          _buildMenuItem(
+            'assets/images/ic_menu_video_kajian.png',
+            'Dzikir',
+            '/video-kajian',
+          ),
+          _buildMenuItem(
+            'assets/images/ic_menu_video_kajian.png',
+            'Berita',
             '/video-kajian',
           ),
         ],

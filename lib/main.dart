@@ -18,6 +18,8 @@
 // ================================================================
 
 import 'dart:io'; // Untuk HttpOverrides (izin bypass SSL)
+import 'package:bitaqwa/components/doa_page.dart';
+import 'package:bitaqwa/components/quran_list_page.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart'; // Untuk inisialisasi locale tanggal
 
@@ -90,6 +92,12 @@ class MyApp extends StatelessWidget {
 
         // '/jadwal-sholat' → halaman jadwal sholat per kota
         '/jadwal-sholat': (context) => SholatPage(),
+
+        // '/doa-harian'-> halaman doa harian
+        '/doa-harian': (context) => DoaPage(),
+
+        // '/quran'-> halaman quran
+        '/quran': (context) => QuranListPage(),
       },
     );
   }
