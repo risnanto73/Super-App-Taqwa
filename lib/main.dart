@@ -28,7 +28,7 @@ import 'package:intl/date_symbol_data_local.dart'; // Untuk inisialisasi locale 
 // ================================================================
 import 'package:bitaqwa/components/dashboard_page.dart';
 import 'package:bitaqwa/components/sholat_page.dart';
-import 'package:bitaqwa/components/video_page.dart';
+import 'package:bitaqwa/components/kajian_page.dart';
 import 'package:bitaqwa/components/zakat_page.dart';
 import 'package:bitaqwa/pages/home_page.dart';
 
@@ -82,10 +82,10 @@ class MyApp extends StatelessWidget {
       /// 🗺️ Routing antar halaman (named routes)
       routes: {
         // '/' → halaman awal (dashboard utama)
-        '/': (context) => HomePage(),
+        '/': (context) => DashboardPage(),
 
         // '/video-kajian' → halaman daftar video kajian
-        '/video-kajian': (context) => VideoPage(),
+        '/video-kajian': (context) => KajianPage(),
 
         // '/zakat-page' → halaman kalkulator zakat penghasilan
         '/zakat-page': (context) => ZakatPage(),

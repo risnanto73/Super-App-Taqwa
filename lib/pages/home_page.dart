@@ -21,14 +21,45 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final CarouselController _controller = CarouselController();
   int _currentIndex = 0;
-
-  final icDoa = 'assets/images/ic_menu_doa.png';
+  bool _isLoading = true;
+  Duration? _timeRemaining;
+  Timer? _countdownTimer;
+  String _location = "Mengambil lokasi....";
+  String _prayTime = "Loading...";
+  String _backgroundImage = 'assets/images/bg_morning.png';
+  List<dynamic>? _jadwalSholat;
 
   final posterList = const <String>[
     'assets/images/ramadhan-kareem.png',
     'assets/images/idl-fitr.png',
     'assets/images/idl-adh.png',
   ];
+
+  //fungsi teks remaining waktu sholat
+  String _formatDuration(Duration d) {
+    final hours = d.inHours;
+    final minute = d.inMinutes.remainder(60);
+    return "$hours jam $minute menit lagi";
+  }
+
+  // state untuk dijalankan diawal
+  @override
+  void initState() {
+    super.initState();
+    _updatePrayerTimes();
+  }
+
+  Future<void> _updatePrayerTimes() async {}
+
+  String _getBackgroundImage(DateTime now) {
+    if (now.hour < 12) {
+      return 'assets/images/bg_morning.png';
+    } else if (now.hour < 18) {
+      return 'assets/images/bg_afternoon.png';
+    }
+
+    return 'assets/images/bg_night.png';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +72,7 @@ class _HomePageState extends State<HomePage> {
               // [MENU WAKTU SHOLAT BY LOKASI]
               // =============================
               _buildHeroSection(),
-
+              const SizedBox(height: 65),
               // =============================
               // [MENU SECTION]
               // =============================
@@ -75,7 +106,7 @@ class _HomePageState extends State<HomePage> {
               bottomLeft: Radius.circular(30),
             ),
             image: DecorationImage(
-              image: AssetImage('assets/images/bg_afternoon.png'),
+              image: AssetImage(_backgroundImage),
               fit: BoxFit.cover,
             ),
           ),
@@ -107,7 +138,64 @@ class _HomePageState extends State<HomePage> {
                     fontFamily: 'PoppinsBold',
                     fontSize: 50,
                     height: 1.2,
-                    color: Colors.white
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // ========= WAKTU SHOLAT SELANJUTNYA =========
+        Positioned(
+          bottom: -55,
+          left: 20,
+          right: 20,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  blurRadius: 2,
+                  offset: Offset(0, 4),
+                  color: Colors.amber.withOpacity(0.4),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+            child: Column(
+              children: [
+                Text(
+                  'Waktu Sholat Berikutnya..',
+                  style: TextStyle(
+                    fontFamily: 'PoppinsRegular',
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+                Text(
+                  'ASHAR',
+                  style: TextStyle(
+                    fontFamily: 'PoppinsBold',
+                    fontSize: 20,
+                    color: Colors.amber,
+                  ),
+                ),
+                Text(
+                  '14:22',
+                  style: TextStyle(
+                    fontFamily: 'PoppinsBold',
+                    fontSize: 28,
+                    color: Colors.black38,
+                  ),
+                ),
+                Text(
+                  '5 Jam 10 Menit',
+                  style: TextStyle(
+                    fontFamily: 'PoppinsRegular',
+                    fontSize: 13,
+                    color: Colors.grey,
                   ),
                 ),
               ],
@@ -172,7 +260,7 @@ class _HomePageState extends State<HomePage> {
         physics: const NeverScrollableScrollPhysics(),
         children: [
           _buildMenuItem(
-            icDoa, // iconPath
+            'assets/images/ic_menu_doa.png', // iconPath
             'Doa', // title
             '/doa',
           ), //routeName
@@ -188,7 +276,7 @@ class _HomePageState extends State<HomePage> {
           ),
           _buildMenuItem('assets/images/ic_menu_zakat.png', 'Zakat', '/doa'),
           _buildMenuItem(
-            icDoa, // iconPath
+            'assets/images/ic_menu_jadwal_sholat.png', // iconPath
             'Khutbah', // title
             '/doa',
           ),
