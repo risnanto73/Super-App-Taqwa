@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import '../widgets/kajian/kajian_video_player.dart';
+import '../widgets/kajian/kajian_description_card.dart';
 
 class DetailKajianPage extends StatefulWidget {
   final Map<String, String> video;
@@ -44,39 +46,9 @@ class _DetailKajianPageState extends State<DetailKajianPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Player YouTube
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: player,
-                ),
-
+                KajianVideoPlayer(controller: _controller),
                 const SizedBox(height: 20),
-
-                // Judul
-                Text(
-                  widget.video['title']!,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                // Ustadz
-                Text(
-                  widget.video['ustadz']!,
-                  style: const TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Deskripsi
-                Text(
-                  widget.video['description']!,
-                  textAlign: TextAlign.justify,
-                  style: const TextStyle(fontSize: 15),
-                ),
+                KajianDescriptionCard(video: widget.video),
               ],
             ),
           ),

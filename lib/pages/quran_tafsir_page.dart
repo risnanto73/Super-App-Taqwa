@@ -2,6 +2,7 @@ import 'package:bitaqwa/model/quran_models.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../widgets/quran/tafsir_card.dart';
 
 class QuranTafsirPage extends StatefulWidget {
   final int suratId;
@@ -22,7 +23,9 @@ class _QuranTafsirPageState extends State<QuranTafsirPage> {
   }
 
   Future<void> fetchTafsir() async {
-    final response = await http.get(Uri.parse("https://equran.id/api/v2/tafsir/${widget.suratId}"));
+    final response = await http.get(
+      Uri.parse("https://equran.id/api/v2/tafsir/${widget.suratId}"),
+    );
     if (response.statusCode == 200) {
       final data = json.decode(response.body)['data']['tafsir'] as List;
       setState(() {
@@ -47,22 +50,7 @@ class _QuranTafsirPageState extends State<QuranTafsirPage> {
               padding: const EdgeInsets.all(16),
               itemCount: tafsirList.length,
               itemBuilder: (context, index) {
-                final t = tafsirList[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Ayat ${t.ayat}",
-                            style: const TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        Text(t.teks, textAlign: TextAlign.justify),
-                      ],
-                    ),
-                  ),
-                );
+                return TafsirCard(tafsir: tafsirList[index]);
               },
             ),
     );

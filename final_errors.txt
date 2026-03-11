@@ -1,0 +1,18 @@
+﻿Analyzing 3 items...                                            
+
+   info - The variable name 'GS' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:166:18 - non_constant_identifier_names
+   info - The variable name 'GD' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:167:18 - non_constant_identifier_names
+   info - The variable name 'GF' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:170:18 - non_constant_identifier_names
+   info - The variable name 'GMf' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:171:18 - non_constant_identifier_names
+   info - The variable name 'GMm' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:172:18 - non_constant_identifier_names
+   info - The variable name 'Bf' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:173:18 - non_constant_identifier_names
+   info - The variable name 'Sf' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:174:18 - non_constant_identifier_names
+   info - The variable name 'Bp' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:175:18 - non_constant_identifier_names
+   info - The variable name 'Sp' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:176:18 - non_constant_identifier_names
+   info - The variable name 'Bm' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:177:18 - non_constant_identifier_names
+   info - The variable name 'Sm' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:178:18 - non_constant_identifier_names
+   info - Statements in an if should be enclosed in a block - lib\services\waris_service.dart:197:9 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\services\waris_service.dart:218:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\services\waris_service.dart:225:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\services\waris_service.dart:233:7 - curly_braces_in_flow_control_structures
+

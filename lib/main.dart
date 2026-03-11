@@ -18,19 +18,26 @@
 // ================================================================
 
 import 'dart:io'; // Untuk HttpOverrides (izin bypass SSL)
-import 'package:bitaqwa/components/doa_page.dart';
-import 'package:bitaqwa/components/quran_list_page.dart';
+import 'pages/doa_page.dart';
+import 'pages/waris_page.dart';
+import 'pages/quran_list_page.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/date_symbol_data_local.dart'; // Untuk inisialisasi locale tanggal
+import 'package:intl/date_symbol_data_local.dart';
 
-// ================================================================
-// 🔹 Import Komponen Halaman
-// ================================================================
-import 'package:bitaqwa/components/dashboard_page.dart';
-import 'package:bitaqwa/components/sholat_page.dart';
-import 'package:bitaqwa/components/kajian_page.dart';
-import 'package:bitaqwa/components/zakat_page.dart';
-import 'package:bitaqwa/pages/home_page.dart';
+import 'pages/dashboard_page.dart';
+import 'pages/sholat_page.dart';
+import 'pages/kajian_page.dart';
+import 'pages/zakat_page.dart';
+import 'package:home_widget/home_widget.dart';
+import 'widget/prayer_widget_updater.dart';
+
+// Callback untuk background refresh (dipanggil oleh Android bila tombol Refresh di widget ditekan)
+@pragma('vm:entry-point')
+Future<void> backgroundCallback(Uri? uri) async {
+  if (uri?.host == 'refresh') {
+    await PrayerWidgetUpdater.refreshAndSave();
+  }
+}
 
 // ================================================================
 // 🔷 Fungsi utama aplikasi Flutter
@@ -38,6 +45,9 @@ import 'package:bitaqwa/pages/home_page.dart';
 void main() async {
   /// 🔹 Pastikan Flutter sudah siap sebelum menjalankan async
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Registrasi background callback
+  await HomeWidget.registerBackgroundCallback(backgroundCallback);
 
   /// 🔹 Inisialisasi format tanggal bahasa Indonesia
   /// Contoh hasil: “Senin, 6 November 2025”
@@ -98,6 +108,9 @@ class MyApp extends StatelessWidget {
 
         // '/quran'-> halaman quran
         '/quran': (context) => QuranListPage(),
+
+        // '/waris' -> halaman kalkulator waris
+        '/waris': (context) => WarisPage(),
       },
     );
   }

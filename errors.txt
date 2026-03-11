@@ -1,0 +1,46 @@
+﻿Analyzing Super-App-Taqwa...                                    
+
+   info - 'registerBackgroundCallback' is deprecated and shouldn't be used. Use `registerInteractivityCallback` instead - lib\main.dart:50:20 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\pages\doa_page.dart:122:41 - deprecated_member_use
+warning - Unused import: 'package:flutter_html/flutter_html.dart' - lib\pages\quran_detail_page.dart:23:8 - unused_import
+   info - The variable name 'GS' isn't a lowerCamelCase identifier - lib\pages\waris_page.dart:20:35 - non_constant_identifier_names
+   info - The variable name 'GD' isn't a lowerCamelCase identifier - lib\pages\waris_page.dart:20:43 - non_constant_identifier_names
+   info - The variable name 'GF' isn't a lowerCamelCase identifier - lib\pages\waris_page.dart:20:65 - non_constant_identifier_names
+   info - The variable name 'GMf' isn't a lowerCamelCase identifier - lib\pages\waris_page.dart:21:7 - non_constant_identifier_names
+   info - The variable name 'GMm' isn't a lowerCamelCase identifier - lib\pages\waris_page.dart:21:16 - non_constant_identifier_names
+   info - The variable name 'Bf' isn't a lowerCamelCase identifier - lib\pages\waris_page.dart:21:25 - non_constant_identifier_names
+   info - The variable name 'Sf' isn't a lowerCamelCase identifier - lib\pages\waris_page.dart:21:33 - non_constant_identifier_names
+   info - The variable name 'Bp' isn't a lowerCamelCase identifier - lib\pages\waris_page.dart:21:41 - non_constant_identifier_names
+   info - The variable name 'Sp' isn't a lowerCamelCase identifier - lib\pages\waris_page.dart:21:49 - non_constant_identifier_names
+   info - The variable name 'Bm' isn't a lowerCamelCase identifier - lib\pages\waris_page.dart:21:57 - non_constant_identifier_names
+   info - The variable name 'Sm' isn't a lowerCamelCase identifier - lib\pages\waris_page.dart:21:65 - non_constant_identifier_names
+  error - The name 'PdfPageFormat' is being referenced through the prefix 'pw', but it isn't defined in any of the libraries imported using that prefix - lib\services\pdf_service.dart:22:24 - undefined_prefixed_name
+  error - The name 'PdfColors' is being referenced through the prefix 'pw', but it isn't defined in any of the libraries imported using that prefix - lib\services\pdf_service.dart:35:33 - undefined_prefixed_name
+  error - The name 'PdfColors' is being referenced through the prefix 'pw', but it isn't defined in any of the libraries imported using that prefix - lib\services\pdf_service.dart:38:54 - undefined_prefixed_name
+  error - The name 'PdfColors' is being referenced through the prefix 'pw', but it isn't defined in any of the libraries imported using that prefix - lib\services\pdf_service.dart:70:31 - undefined_prefixed_name
+   info - 'Table.fromTextArray' is deprecated and shouldn't be used. Use TableHelper.fromTextArray() instead - lib\services\pdf_service.dart:83:13 - deprecated_member_use
+  error - The name 'PdfColors' is being referenced through the prefix 'pw', but it isn't defined in any of the libraries imported using that prefix - lib\services\pdf_service.dart:86:27 - undefined_prefixed_name
+  error - Invalid constant value - lib\services\pdf_service.dart:89:24 - invalid_constant
+  error - The name 'PdfColors' is being referenced through the prefix 'pw', but it isn't defined in any of the libraries imported using that prefix - lib\services\pdf_service.dart:89:27 - undefined_prefixed_name
+  error - The name 'PdfColors' is being referenced through the prefix 'pw', but it isn't defined in any of the libraries imported using that prefix - lib\services\pdf_service.dart:122:48 - undefined_prefixed_name
+  error - The name 'PdfColors' is being referenced through the prefix 'pw', but it isn't defined in any of the libraries imported using that prefix - lib\services\pdf_service.dart:132:33 - undefined_prefixed_name
+  error - The name 'PdfColors' is being referenced through the prefix 'pw', but it isn't defined in any of the libraries imported using that prefix - lib\services\pdf_service.dart:140:33 - undefined_prefixed_name
+  error - Undefined class 'PdfPageFormat' - lib\services\pdf_service.dart:153:18 - undefined_class
+   info - The variable name 'GS' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:166:18 - non_constant_identifier_names
+   info - The variable name 'GD' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:167:18 - non_constant_identifier_names
+   info - The variable name 'GF' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:170:18 - non_constant_identifier_names
+   info - The variable name 'GMf' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:171:18 - non_constant_identifier_names
+   info - The variable name 'GMm' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:172:18 - non_constant_identifier_names
+   info - The variable name 'Bf' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:173:18 - non_constant_identifier_names
+   info - The variable name 'Sf' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:174:18 - non_constant_identifier_names
+   info - The variable name 'Bp' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:175:18 - non_constant_identifier_names
+   info - The variable name 'Sp' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:176:18 - non_constant_identifier_names
+   info - The variable name 'Bm' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:177:18 - non_constant_identifier_names
+   info - The variable name 'Sm' isn't a lowerCamelCase identifier - lib\services\waris_service.dart:178:18 - non_constant_identifier_names
+   info - Statements in an if should be enclosed in a block - lib\services\waris_service.dart:197:9 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\services\waris_service.dart:218:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\services\waris_service.dart:225:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\services\waris_service.dart:233:7 - curly_braces_in_flow_control_structures
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\widgets\quran\quran_audio_player_card.dart:58:15 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\widgets\zakat\forms\zakat_pertanian_form.dart:52:13 - deprecated_member_use
+

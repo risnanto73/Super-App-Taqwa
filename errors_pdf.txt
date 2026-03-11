@@ -1,0 +1,6 @@
+﻿Analyzing pdf_service.dart...                                   
+
+warning - Unused import: 'dart:io' - lib\services\pdf_service.dart:1:8 - unused_import
+warning - Unused import: 'package:flutter/services.dart' - lib\services\pdf_service.dart:2:8 - unused_import
+   info - 'Table.fromTextArray' is deprecated and shouldn't be used. Use TableHelper.fromTextArray() instead - lib\services\pdf_service.dart:83:13 - deprecated_member_use
+
